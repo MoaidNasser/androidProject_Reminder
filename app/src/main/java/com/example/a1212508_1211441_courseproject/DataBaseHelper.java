@@ -1,5 +1,6 @@
 package com.example.a1212508_1211441_courseproject;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -97,47 +98,34 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return result != -1; // Return true if insertion is successful
     }
 
+
+
     /**
      * Retrieve all tasks for a specific user.
      */
-// In your DataBaseHelper class
-    public List<TaskModel> getAllTasks(String email) {
+    // Your database and table initialization code here
+
+    public List<TaskModel> getAllTasksSortedByDate(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         List<TaskModel> tasks = new ArrayList<>();
 
-        Cursor cursor = db.rawQuery("SELECT * FROM Tasks WHERE email = ? ORDER BY due_date_time", new String[]{email});
+        // SQL query to fetch tasks sorted by due date (chronologically)
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM Tasks WHERE email = ? ORDER BY due_date_time ASC",
+                new String[]{email});
+
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                // Safely retrieve column indices
-                int idColumnIndex = cursor.getColumnIndex("id");
-                int titleColumnIndex = cursor.getColumnIndex("title");
-                int descriptionColumnIndex = cursor.getColumnIndex("description");
-                int dueDateTimeColumnIndex = cursor.getColumnIndex("due_date_time");
-                int priorityColumnIndex = cursor.getColumnIndex("priority");
-                int statusColumnIndex = cursor.getColumnIndex("status");
-                int reminderColumnIndex = cursor.getColumnIndex("reminder");
+                @SuppressLint("Range") int id = cursor.getInt(cursor.getColumnIndex("id"));
+                @SuppressLint("Range") String title = cursor.getString(cursor.getColumnIndex("title"));
+                @SuppressLint("Range") String description = cursor.getString(cursor.getColumnIndex("description"));
+                @SuppressLint("Range") String dueDateTime = cursor.getString(cursor.getColumnIndex("due_date_time"));
+                @SuppressLint("Range") String priority = cursor.getString(cursor.getColumnIndex("priority"));
+                @SuppressLint("Range") String status = cursor.getString(cursor.getColumnIndex("status"));
+                @SuppressLint("Range") int reminder = cursor.getInt(cursor.getColumnIndex("reminder"));
 
-                // Make sure column indices are valid
-                if (idColumnIndex != -1 && titleColumnIndex != -1 && descriptionColumnIndex != -1 &&
-                        dueDateTimeColumnIndex != -1 && priorityColumnIndex != -1 && statusColumnIndex != -1 &&
-                        reminderColumnIndex != -1) {
-
-                    int id = cursor.getInt(idColumnIndex);
-                    String title = cursor.getString(titleColumnIndex);
-                    String description = cursor.getString(descriptionColumnIndex);
-                    String dueDateTime = cursor.getString(dueDateTimeColumnIndex);
-                    String priority = cursor.getString(priorityColumnIndex);
-                    String status = cursor.getString(statusColumnIndex);
-                    int reminder = cursor.getInt(reminderColumnIndex);
-
-                    // Create TaskModel and add to the list
-                    TaskModel task = new TaskModel(id, title, description, dueDateTime, priority, status, reminder);
-                    tasks.add(task);
-                } else {
-                    // Log or handle the case where the column doesn't exist
-                    Log.e("Database", "One or more columns are missing.");
-                }
-
+                TaskModel task = new TaskModel(id, title, description, dueDateTime, priority, status, reminder);
+                tasks.add(task);
             } while (cursor.moveToNext());
         }
 
@@ -149,36 +137,20 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     }
 
 
-    /**
-     * Update the completion status of a task.
-     */
-    public boolean updateTaskStatus(int taskId, String newStatus) {
+    public boolean updateTask(TaskModel task) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("status", newStatus);
+        values.put("title", task.getTitle());
+        values.put("description", task.getDescription());
+        values.put("due_date", task.getDueDate());
+        values.put("priority", task.getPriority());
 
-        int rowsUpdated = db.update("Tasks", values, "id = ?", new String[]{String.valueOf(taskId)});
+        int rowsAffected = db.update("Tasks", values, "id = ?", new String[]{String.valueOf(task.getId())});
         db.close();
-        return rowsUpdated > 0;
+        return rowsAffected > 0;  // Return true if at least one row was updated
     }
 
-    /**
-     * Update task details such as title, description, due date, priority, and reminder.
-     */
-    public boolean updateTaskDetails(int taskId, String title, String description, String dueDateTime, String priority, int reminder) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
 
-        values.put("title", title);
-        values.put("description", description);
-        values.put("due_date_time", dueDateTime);
-        values.put("priority", priority);
-        values.put("reminder", reminder);
-
-        int rowsUpdated = db.update("Tasks", values, "id = ?", new String[]{String.valueOf(taskId)});
-        db.close();
-        return rowsUpdated > 0;
-    }
 
     /**
      * Delete a task from the database.
@@ -190,17 +162,8 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         return rowsDeleted > 0;
     }
 
-    /**
-     * Retrieve a task by its ID.
-     */
-    public Cursor getTaskById(int taskId) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM Tasks WHERE id = ?", new String[]{String.valueOf(taskId)});
-    }
 
-    /**
-     * Retrieve all tasks for a specific user, ordered by due date.
-     */
+
     public Cursor getTasksByUserEmail(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM Tasks WHERE email = ? ORDER BY due_date_time", new String[]{email});

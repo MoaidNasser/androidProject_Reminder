@@ -1,5 +1,10 @@
 package com.example.a1212508_1211441_courseproject.ui.alltasks;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a1212508_1211441_courseproject.DataBaseHelper;
 import com.example.a1212508_1211441_courseproject.TaskAdapter;
+import com.example.a1212508_1211441_courseproject.EditTaskActivity;
 import com.example.a1212508_1211441_courseproject.TaskModel;
 import com.example.a1212508_1211441_courseproject.R;
 
@@ -37,9 +43,17 @@ public class AllTasksFragment extends Fragment {
 
         dbHelper = new DataBaseHelper(getContext());
 
-        // Fetch tasks for the logged-in user
-        String loggedInUserEmail = "user@example.com"; // Replace with actual logged-in user email
-        allTasksList = dbHelper.getAllTasks(loggedInUserEmail);
+        // Retrieve the logged-in user's email from SharedPreferences
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String loggedInUserEmail = sharedPreferences.getString("email", null);
+
+        if (loggedInUserEmail == null) {
+            Toast.makeText(getContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show();
+            return rootView; // Return early if no user is logged in
+        }
+
+        // Fetch tasks for the logged-in user, sorted by due date (SQL query handles sorting)
+        allTasksList = dbHelper.getAllTasksSortedByDate(loggedInUserEmail);
 
         // Initialize the adapter and set it to the RecyclerView
         taskAdapter = new TaskAdapter(allTasksList, new TaskAdapter.OnTaskClickListener() {
@@ -55,10 +69,62 @@ public class AllTasksFragment extends Fragment {
     }
 
     private void showTaskOptions(TaskModel task) {
-        // Show a simple toast or dialog with options to Edit or Delete
-        Toast.makeText(getContext(), "Options: Edit or Delete task with ID " + task.getId(), Toast.LENGTH_SHORT).show();
-        // You can implement your Edit and Delete logic here, for example:
-        // - Edit: Open a new fragment or activity to edit the task
-        // - Delete: Remove the task from the database and update the RecyclerView
+        // Create an AlertDialog to display task details and options to Delete or Edit
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        // Set task details as message in the dialog
+        builder.setTitle("Task Details")
+                .setMessage("Title: " + task.getTitle() + "\n" +
+                        "Description: " + task.getDescription() + "\n" +
+                        "Due Date: " + task.getDueDate() + "\n" +
+                        "Priority: " + task.getPriority() + "\n" +
+                        "Status: " + task.getStatus()
+                )
+                .setPositiveButton("Edit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Call the edit function (start EditTaskActivity with the task data)
+                        editTask(task);
+                    }
+                })
+                .setNegativeButton("Delete", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Call the delete function
+                        deleteTask(task);
+                    }
+                })
+                .setNeutralButton("Cancel", null)  // Close the dialog
+                .show();
+    }
+
+    private void editTask(TaskModel task) {
+        // Create an Intent to start EditTaskActivity
+        Intent intent = new Intent(getContext(), EditTaskActivity.class);
+
+        // Pass task data to the EditTaskActivity
+        intent.putExtra("taskId", task.getId());
+        intent.putExtra("taskTitle", task.getTitle());
+        intent.putExtra("taskDescription", task.getDescription());
+        intent.putExtra("taskDueDate", task.getDueDate());
+        intent.putExtra("taskPriority", task.getPriority());
+        intent.putExtra("taskStatus", task.getStatus());
+
+        // Start EditTaskActivity
+        startActivity(intent);
+    }
+
+    private void deleteTask(TaskModel task) {
+        // Delete the task from the database
+        boolean isDeleted = dbHelper.deleteTask(task.getId());
+
+        if (isDeleted) {
+            Toast.makeText(getContext(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
+            // Update the RecyclerView by removing the task
+            allTasksList.remove(task);
+            taskAdapter.notifyDataSetChanged();
+        } else {
+            Toast.makeText(getContext(), "Failed to delete task", Toast.LENGTH_SHORT).show();
+        }
     }
 }

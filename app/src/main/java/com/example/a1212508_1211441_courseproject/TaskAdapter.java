@@ -7,42 +7,82 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.a1212508_1211441_courseproject.TaskModel;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
 
-    private List<String> taskList;
+    private List<TaskModel> tasks;
+    private OnTaskClickListener listener;
 
-    public TaskAdapter(List<String> taskList) {
-        this.taskList = taskList;
+    public TaskAdapter(List<TaskModel> tasks, OnTaskClickListener listener) {
+        this.tasks = tasks;
+        this.listener = listener;
     }
 
     @Override
     public TaskViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        // Inflate your item layout
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_task, parent, false);
         return new TaskViewHolder(view);
     }
 
+
+
+    // In your TaskAdapter
     @Override
     public void onBindViewHolder(TaskViewHolder holder, int position) {
-        // Bind data to views
-        String task = taskList.get(position);
-        holder.taskTitle.setText(task);
+        TaskModel task = tasks.get(position);
+        holder.titleTextView.setText(task.getTitle());
+
+        // Format the due date
+        String formattedDate = formatDate(task.getDueDate());
+        holder.dueDateTextView.setText(formattedDate);
     }
+
+    private String formatDate(String dueDateTime) {
+        try {
+            // Assuming the due date time is in "YYYY-MM-DD HH:mm:ss" format (you can adjust as needed)
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            Date date = inputFormat.parse(dueDateTime);
+
+            // Format the date to a more readable format
+            SimpleDateFormat outputFormat = new SimpleDateFormat("EEE, MMM dd, yyyy HH:mm", Locale.getDefault());
+            return outputFormat.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return dueDateTime;  // If parsing fails, return the original string
+        }
+    }
+
 
     @Override
     public int getItemCount() {
-        return taskList.size();
+        return tasks.size();
     }
 
-    // ViewHolder class
-    public static class TaskViewHolder extends RecyclerView.ViewHolder {
-        TextView taskTitle;
+    public interface OnTaskClickListener {
+        void onTaskClick(TaskModel task);
+    }
+
+    public class TaskViewHolder extends RecyclerView.ViewHolder {
+
+        TextView titleTextView, dueDateTextView;
 
         public TaskViewHolder(View itemView) {
             super(itemView);
-            taskTitle = itemView.findViewById(R.id.taskTitle);
+            titleTextView = itemView.findViewById(R.id.textViewTaskTitle);
+            dueDateTextView = itemView.findViewById(R.id.textViewDueDate);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    listener.onTaskClick(tasks.get(getAdapterPosition()));
+                }
+            });
         }
     }
 }

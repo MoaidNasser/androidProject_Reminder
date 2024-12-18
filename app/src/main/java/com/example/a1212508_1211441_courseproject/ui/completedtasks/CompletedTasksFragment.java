@@ -12,16 +12,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import com.example.a1212508_1211441_courseproject.R;
 import com.example.a1212508_1211441_courseproject.TaskAdapter;
-
+import com.example.a1212508_1211441_courseproject.TaskModel;
 
 public class CompletedTasksFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private TaskAdapter taskAdapter;
-    private List<String> completedTasksList;
+    private List<TaskModel> completedTasksList; // List of TaskModel objects
 
     public CompletedTasksFragment() {
         // Required empty public constructor
@@ -36,12 +35,19 @@ public class CompletedTasksFragment extends Fragment {
         recyclerView = rootView.findViewById(R.id.recyclerViewCompletedTasks);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Sample data for completed tasks
+        // Sample data for completed tasks (create TaskModel objects instead of strings)
         completedTasksList = new ArrayList<>();
-        completedTasksList.add("Completed Task 1");
-        completedTasksList.add("Completed Task 2");
+        completedTasksList.add(new TaskModel(1, "Completed Task 1", "Task description 1", "2024-12-17", "High", "Completed", 1));
+        completedTasksList.add(new TaskModel(2, "Completed Task 2", "Task description 2", "2024-12-18", "Medium", "Completed", 0));
 
-        taskAdapter = new TaskAdapter(completedTasksList);
+        // Pass the list of TaskModel to the TaskAdapter
+        taskAdapter = new TaskAdapter(completedTasksList, new TaskAdapter.OnTaskClickListener() {
+            @Override
+            public void onTaskClick(TaskModel task) {
+                // Handle task click (e.g., show task details, edit, or delete)
+            }
+        });
+
         recyclerView.setAdapter(taskAdapter);
 
         return rootView;

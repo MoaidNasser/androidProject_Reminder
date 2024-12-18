@@ -27,23 +27,7 @@ public class TodayFragment extends Fragment {
         // Required empty public constructor
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View rootView = inflater.inflate(R.layout.fragment_today, container, false);
 
-        recyclerView = rootView.findViewById(R.id.recyclerViewToday);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Sample data for today tasks
-        taskList = new ArrayList<>();
-        taskList.add("Task 1 for Today");
-        taskList.add("Task 2 for Today");
 
-        taskAdapter = new TaskAdapter(taskList);
-        recyclerView.setAdapter(taskAdapter);
-
-        return rootView;
-    }
 }

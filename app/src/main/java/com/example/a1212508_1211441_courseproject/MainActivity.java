@@ -1,6 +1,5 @@
 package com.example.a1212508_1211441_courseproject;
 
-
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -36,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         Button signUpButton = findViewById(R.id.btn_sign_up);
 
         // Load saved credentials if "Remember Me" was checked last time
-        loadRememberedCredentials();
+        loadAndValidateRememberedCredentials();
 
         // Set listeners for buttons
         setUpButtonListeners(loginButton, signUpButton);
@@ -65,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // Check if user exists in the database
         if (dbHelper.authenticateUser(email, password)) {
             Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
 
@@ -75,14 +75,34 @@ public class MainActivity extends AppCompatActivity {
                 clearCredentials();
             }
 
-            ////////////////////////////////////////////////////////////////////////////////////
             // Redirect to HomeActivity
-            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
-            intent.putExtra("email", email);
-            startActivity(intent);
-            finish();
+            redirectToHomeActivity(email);
         } else {
             Toast.makeText(this, "Invalid email or password.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Load saved credentials and validate them in the database.
+     */
+    private void loadAndValidateRememberedCredentials() {
+        String email = sharedPreferences.getString("email", null);
+        String password = sharedPreferences.getString("password", null);
+
+        if (email != null && password != null) {
+            // Check if credentials exist in the database
+            if (dbHelper.authenticateUser(email, password)) {
+                // If valid, auto-fill the fields and navigate to HomeActivity
+                editTextEmail.setText(email);
+                editTextPassword.setText(password);
+                checkBoxRememberMe.setChecked(true);
+                Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
+
+                redirectToHomeActivity(email);
+            } else {
+                // If invalid, clear the saved credentials
+                clearCredentials();
+            }
         }
     }
 
@@ -92,20 +112,6 @@ public class MainActivity extends AppCompatActivity {
     private void openSignUpActivity() {
         Intent intent = new Intent(MainActivity.this, SignUpActivity.class);
         startActivity(intent);
-    }
-
-    /**
-     * Load saved credentials from SharedPreferences.
-     */
-    private void loadRememberedCredentials() {
-        String email = sharedPreferences.getString("email", null);
-        String password = sharedPreferences.getString("password", null);
-
-        if (email != null && password != null) {
-            editTextEmail.setText(email);
-            editTextPassword.setText(password);
-            checkBoxRememberMe.setChecked(true);
-        }
     }
 
     /**
@@ -126,5 +132,15 @@ public class MainActivity extends AppCompatActivity {
         editor.remove("email");
         editor.remove("password");
         editor.apply();
+    }
+
+    /**
+     * Redirect to HomeActivity.
+     */
+    private void redirectToHomeActivity(String email) {
+        Intent intent = new Intent(MainActivity.this, HomeActivity.class);
+        intent.putExtra("email", email);
+        startActivity(intent);
+        finish();
     }
 }
